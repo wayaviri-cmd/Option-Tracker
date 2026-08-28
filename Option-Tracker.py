@@ -6,7 +6,7 @@ import streamlit as st
 import yfinance as yf
 
 # App Configuration
-st.set_page_config(page_title="Options Tracker", layout="centered", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Option Strike vs Premium", layout="centered", initial_sidebar_state="collapsed")
 
 # Mobile CSS: Plot on top, multi-row inputs below, zero page bloat
 st.markdown("""
@@ -153,12 +153,16 @@ try:
                 ))
 
             fig.update_layout(
-                height=380,  # Compact height to ensure the form fits below on phone screens
+                height=380,
+                # Centered Title (Font 14, White) with Subtitle (Font 9, 50% Grey)
                 title={
-                    'text': f"<b>{st.session_state['ticker']}</b> {side.upper()}s | Spot: <b>{current_price:.2f}</b>",
-                    'x': 0.02,
-                    'xanchor': 'left',
-                    'font': {'size': 14}
+                    'text': (
+                        f"<span style='color: #ffffff; font-size: 14px;'><b>Option Strike vs Premium</b></span><br>"
+                        f"<span style='color: #808080; font-size: 9px;'><b>{st.session_state['ticker']}</b> {side.upper()}s | Spot: <b>{current_price:.2f}</b> | "
+                        f"Snapshot: {run_timestamp_str} (15-min delayed)</span>"
+                    ),
+                    'x': 0.5,
+                    'xanchor': 'center'
                 },
                 xaxis=dict(
                     fixedrange=True,
@@ -168,7 +172,7 @@ try:
                 ),
                 yaxis=dict(
                     fixedrange=True,
-                    title=dict(text="Last", font=dict(size=12, color="#e5e7eb")),
+                    title=dict(text="Premium Last (USD)", font=dict(size=12, color="#e5e7eb")),
                     tickfont=dict(size=12, color="#e5e7eb"),
                     showgrid=True,
                     gridcolor='#1e222d'
@@ -185,20 +189,7 @@ try:
                     borderwidth=1,
                     font=dict(size=12)
                 ),
-                margin=dict(l=8, r=5, t=30, b=20),
-                annotations=[
-                    dict(
-                        text=f"Run: {run_timestamp_str}",
-                        showarrow=False,
-                        xref="paper",
-                        yref="paper",
-                        x=0.98,
-                        y=-0.08,
-                        xanchor="right",
-                        yanchor="top",
-                        font=dict(size=8, color="#6b7280")
-                    )
-                ]
+                margin=dict(l=8, r=5, t=45, b=20)
             )
 
             st.plotly_chart(
@@ -216,15 +207,15 @@ except Exception as e:
     st.error(f"Error: {e}")
 
 # ----------------- 2. MULTI-ROW DATA ENTRY (BOTTOM) -----------------
-# Row 1: Ticker and Option Side
+# Row 1: Ticker and Option Type
 r1_col1, r1_col2 = st.columns(2)
 with r1_col1:
     ticker_val = st.text_input("Ticker", value=st.session_state["ticker"]).strip().upper()
 with r1_col2:
-    side_val = st.selectbox("Side", ["Put", "Call"], index=0 if st.session_state["side"] == "Put" else 1)
+    side_val = st.selectbox("Option Type", ["Put", "Call"], index=0 if st.session_state["side"] == "Put" else 1)
 
-# Row 2: Step % (Full width or split)
-step_val = st.number_input("Step %", min_value=0.5, max_value=10.0, value=st.session_state["step_pct"], step=0.5)
+# Row 2: Strike Step %
+step_val = st.number_input("Strike Step %", min_value=0.5, max_value=10.0, value=st.session_state["step_pct"], step=0.5)
 
 # Row 3: Run Button
 if st.button("Run"):
