@@ -142,11 +142,11 @@ try:
             # 1. Centered Title (Font 22, White)
             st.markdown("<div style='text-align: center; color: #ffffff; font-size: 22px; font-weight: bold; line-height: 1.2;'>Option Strike vs Premium</div>", unsafe_allow_html=True)
             
-            # 2. Date When Run in NY Time (Font 18, 80% White / #cccccc)
-            st.markdown(f"<div style='text-align: center; color: #cccccc; font-size: 18px; margin-bottom: 4px;'>{run_timestamp_str}</div>", unsafe_allow_html=True)
+            # 2. Date When Run in NY Time (Reduced by 20%: 18px -> 14px, 80% White / #cccccc)
+            st.markdown(f"<div style='text-align: center; color: #cccccc; font-size: 14px; margin-bottom: 4px;'>{run_timestamp_str}</div>", unsafe_allow_html=True)
             
-            # 3. Left-Aligned Summary Header (Font 12, White)
-            st.markdown(f"<div style='text-align: left; color: #ffffff; font-size: 12px; margin-bottom: 2px;'><b>Ticker:</b> {st.session_state['ticker']} &nbsp;|&nbsp; <b>Spot:</b> {current_price:.2f} &nbsp;|&nbsp; <b>Type:</b> {st.session_state['side']}</div>", unsafe_allow_html=True)
+            # 3. Centered Summary Header (Increased by 20%: 12px -> 14px, White)
+            st.markdown(f"<div style='text-align: center; color: #ffffff; font-size: 14px; margin-bottom: 2px;'><b>Ticker:</b> {st.session_state['ticker']} &nbsp;|&nbsp; <b>Spot:</b> {current_price:.2f} &nbsp;|&nbsp; <b>Type:</b> {st.session_state['side']}</div>", unsafe_allow_html=True)
 
             fig = go.Figure()
             date_strings = [d.strftime("%b %d") for d in valid_dates]
@@ -172,8 +172,8 @@ try:
                 ),
                 yaxis=dict(
                     fixedrange=True,
-                    title=dict(text="Premium - Last US / Stock", font=dict(size=16, color="#e5e7eb")),  # +30% title font (12 -> 16)
-                    tickfont=dict(size=14, color="#e5e7eb"),                                           # +20% numbers font (12 -> 14.4 rounded)
+                    title=dict(text="Premium - Last US / Stock", font=dict(size=16, color="#e5e7eb")),
+                    tickfont=dict(size=14, color="#e5e7eb"),
                     showgrid=True,
                     gridcolor='#1e222d'
                 ),
