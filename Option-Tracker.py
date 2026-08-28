@@ -5,66 +5,85 @@ import plotly.graph_objects as go
 import streamlit as st
 import yfinance as yf
 
-# Minimal Page Config
-st.set_page_config(page_title="Option Premium Tracker", layout="centered")
+# Mobile Viewport & App Configuration
+st.set_page_config(page_title="Options Tracker", layout="centered", initial_sidebar_state="collapsed")
 
-# Custom CSS for compact inputs, hidden Streamlit chrome, and small green button
+# Mobile CSS: compact layout, 2x2 grid enforcement, small green button
 st.markdown("""
 <style>
-    /* Hide top padding and header lines */
+    /* Remove padding around main container */
     .block-container {
-        padding-top: 1.5rem !important;
-        padding-bottom: 1rem !important;
-        max-width: 700px !important;
+        padding-top: 0.5rem !important;
+        padding-bottom: 0.5rem !important;
+        padding-left: 0.4rem !important;
+        padding-right: 0.4rem !important;
+        max-width: 100% !important;
     }
-    #MainMenu, footer, header {visibility: hidden;}
+    #MainMenu, footer, header { visibility: hidden; }
 
-    /* Tighten input labels & form spacing */
-    .stTextInput > label, .stSelectbox > label, .stNumberInput > label {
-        font-size: 0.82rem !important;
-        font-weight: 600 !important;
-        margin-bottom: 0.1rem !important;
-    }
+    /* Compact form container */
     [data-testid="stForm"] {
-        border: 1px solid #2d3748 !important;
-        padding: 1rem !important;
+        border: 1px solid #262730 !important;
+        padding: 0.5rem 0.6rem !important;
         border-radius: 8px !important;
         background-color: #0e1117;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Force horizontal column display on mobile */
+    [data-testid="column"] {
+        width: calc(50% - 0.3rem) !important;
+        flex: 1 1 calc(50% - 0.3rem) !important;
+        min-width: calc(50% - 0.3rem) !important;
+    }
+
+    /* Tighten labels and input heights */
+    .stTextInput > label, .stSelectbox > label, .stNumberInput > label {
+        font-size: 0.75rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 0px !important;
+    }
+    .stTextInput input, .stSelectbox div[data-baseweb="select"], .stNumberInput input {
+        min-height: 34px !important;
+        height: 34px !important;
+        font-size: 0.85rem !important;
+        padding: 0 6px !important;
     }
 
     /* Small Green Run Button */
     div.stButton > button {
         background-color: #2e7d32 !important;
-        color: white !important;
+        color: #ffffff !important;
         border: none !important;
         font-size: 0.85rem !important;
-        font-weight: 600 !important;
-        padding: 0.35rem 1.2rem !important;
-        border-radius: 5px !important;
-        height: auto !important;
-        min-height: unset !important;
+        font-weight: bold !important;
+        padding: 0.3rem 0.6rem !important;
+        height: 34px !important;
+        width: 100% !important;
+        border-radius: 6px !important;
+        margin-top: 1.15rem !important;
     }
     div.stButton > button:hover {
         background-color: #1b5e20 !important;
-        color: white !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Compact Single-Row Input Form
-with st.form("scanner_form"):
-    c1, c2, c3, c4 = st.columns([1.5, 1.2, 1.2, 1.2])
-    with c1:
+# 2x2 Grid for Mobile
+with st.form("compact_form"):
+    r1_col1, r1_col2 = st.columns(2)
+    with r1_col1:
         ticker_input = st.text_input("Ticker", value="GOOG").strip().upper()
-    with c2:
+    with r1_col2:
         side_choice = st.selectbox("Side", ["Call", "Put"], index=0)
-    with c3:
+
+    r2_col1, r2_col2 = st.columns(2)
+    with r2_col1:
         pct_step = st.number_input("Step %", min_value=0.5, max_value=10.0, value=2.0, step=0.5) / 100.0
-    with c4:
-        st.markdown("<div style='height: 1.6rem;'></div>", unsafe_allow_html=True)
+    with r2_col2:
         submitted = st.form_submit_button("Run")
 
-MAX_DAYS_AHEAD = 30  # Fixed 30-day lookahead
+MAX_DAYS_AHEAD = 30  # Default 30-day window
 
 if submitted or "first_load" not in st.session_state:
     st.session_state["first_load"] = True
@@ -75,34 +94,28 @@ if submitted or "first_load" not in st.session_state:
     try:
         ticker = yf.Ticker(ticker_input)
         
-        # 1. Fetch current price
         hist = ticker.history(period="5d")
         if hist.empty:
-            st.error(f"Could not load price for '{ticker_input}'.")
+            st.error(f"Could not load '{ticker_input}'.")
             st.stop()
 
         current_price = float(hist["Close"].iloc[-1])
         side = side_choice.lower()
 
-        # 2. Expirations within 30 days
         all_options = ticker.options
         if not all_options:
             st.warning(f"No option chain returned for {ticker_input}.")
             st.stop()
 
         today = run_time_utc.date()
-        expirations = []
-        for s in all_options:
-            try:
-                d = dt.datetime.strptime(s, "%Y-%m-%d").date()
-                if 0 <= (d - today).days <= MAX_DAYS_AHEAD:
-                    expirations.append(d)
-            except Exception:
-                continue
-
+        expirations = [
+            dt.datetime.strptime(s, "%Y-%m-%d").date()
+            for s in all_options
+            if 0 <= (dt.datetime.strptime(s, "%Y-%m-%d").date() - today).days <= MAX_DAYS_AHEAD
+        ]
         expirations.sort()
 
-        # Fallback if no dates fall inside 30 days
+        # Fallback if 30d window has no weekly/monthly options
         if not expirations:
             for s in all_options:
                 try:
@@ -118,18 +131,18 @@ if submitted or "first_load" not in st.session_state:
             st.warning("No upcoming expiration dates found.")
             st.stop()
 
-        # 3. Strike calculation (+2% calls, -2% puts)
+        # Generate strikes (+2% calls, -2% puts)
         direction = 1 if side == "call" else -1
         strikes = sorted([
             round(current_price * (1 + direction * pct_step * i), 1)
             for i in range(4)
         ])
 
-        # 4. Collect Last prices
+        # Fetch option chain
         data = {s: [] for s in strikes}
         valid_dates = []
 
-        with st.spinner("Fetching option chain..."):
+        with st.spinner("Loading..."):
             for d in expirations:
                 date_str = d.strftime("%Y-%m-%d")
                 try:
@@ -148,10 +161,10 @@ if submitted or "first_load" not in st.session_state:
                     continue
 
         if not valid_dates:
-            st.warning("No contracts available for the selected dates.")
+            st.warning("No option chain contracts found.")
             st.stop()
 
-        # 5. Clean Plotly Figure
+        # Plotly chart configuration
         fig = go.Figure()
         date_strings = [d.strftime("%b %d") for d in valid_dates]
 
@@ -162,45 +175,59 @@ if submitted or "first_load" not in st.session_state:
                 y=vals,
                 customdata=p_pct_vals,
                 mode="lines+markers",
-                name=f"{strike}",
+                name=f"{strike}",  # Numbers only, 'Strike' removed
                 hovertemplate=f"<b>Strike:</b> {strike}<br><b>Last:</b> %{{y:.2f}}<br><b>P%:</b> %{{customdata:.2f}}%<extra></extra>"
             ))
 
         fig.update_layout(
             title={
-                'text': f"<b>{ticker_input}</b> {side.upper()}s &nbsp;|&nbsp; Spot: <b>{current_price:.2f}</b><br><sup>Run: {run_timestamp_str}</sup>",
+                'text': f"<b>{ticker_input}</b> {side.upper()}s | Spot: <b>{current_price:.2f}</b>",
                 'x': 0.02,
                 'xanchor': 'left',
-                'font': {'size': 15}
+                'font': {'size': 13}
             },
-            xaxis_title=None,
-            yaxis_title="Last Premium",
+            xaxis=dict(
+                tickfont=dict(size=10),
+                showgrid=True,
+                gridcolor='#1e222d'
+            ),
+            yaxis=dict(
+                title=dict(text="Last Premium", font=dict(size=11)),
+                tickfont=dict(size=10),
+                showgrid=True,
+                gridcolor='#1e222d'
+            ),
             template="plotly_dark",
             hovermode="x unified",
             legend=dict(
                 orientation="h",
                 yanchor="bottom",
-                y=-0.32,
+                y=-0.28,
                 xanchor="center",
-                x=0.5
+                x=0.5,
+                font=dict(size=11)
             ),
-            margin=dict(l=10, r=10, t=55, b=60),
+            margin=dict(l=5, r=5, t=35, b=45),
             annotations=[
                 dict(
-                    text=f"Valid at snapshot: {run_timestamp_str}",
+                    text=f"Run: {run_timestamp_str}",
                     showarrow=False,
                     xref="paper",
                     yref="paper",
                     x=0.5,
-                    y=-0.42,
+                    y=-0.38,
                     xanchor="center",
                     yanchor="top",
-                    font=dict(size=9, color="#718096")
+                    font=dict(size=8, color="#718096")
                 )
             ]
         )
 
-        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+        st.plotly_chart(
+            fig,
+            use_container_width=True,
+            config={'displayModeBar': False, 'responsive': True}
+        )
 
     except Exception as e:
         st.error(f"Error: {e}")
