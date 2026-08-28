@@ -1,5 +1,5 @@
 import datetime as dt
-from datetime import timezone
+import pytz
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
@@ -74,8 +74,11 @@ if "step_pct" not in st.session_state:
     st.session_state["step_pct"] = 2.0
 
 MAX_DAYS_AHEAD = 30
-run_time_utc = dt.datetime.now(timezone.utc)
-run_timestamp_str = run_time_utc.strftime("%Y-%m-%d %H:%M:%S UTC")
+
+# New York Market Time (EDT/EST)
+ny_tz = pytz.timezone("America/New_York")
+run_time_ny = dt.datetime.now(ny_tz)
+run_timestamp_str = run_time_ny.strftime("%Y-%m-%d %H:%M:%S %Z")
 
 # ----------------- 1. CHART DISPLAY (TOP) -----------------
 try:
@@ -90,7 +93,7 @@ try:
         pct_step = st.session_state["step_pct"] / 100.0
 
         all_options = ticker.options
-        today = run_time_utc.date()
+        today = run_time_ny.date()
         expirations = [
             dt.datetime.strptime(s, "%Y-%m-%d").date()
             for s in all_options
@@ -139,8 +142,8 @@ try:
             # 1. Centered Title (Font 22, White)
             st.markdown("<div style='text-align: center; color: #ffffff; font-size: 22px; font-weight: bold; line-height: 1.2;'>Option Strike vs Premium</div>", unsafe_allow_html=True)
             
-            # 2. Date When Run (Font 18, 30% Grey / #4d4d4d)
-            st.markdown(f"<div style='text-align: center; color: #4d4d4d; font-size: 18px; margin-bottom: 4px;'>{run_timestamp_str}</div>", unsafe_allow_html=True)
+            # 2. Date When Run in NY Time (Font 18, 80% White / #cccccc)
+            st.markdown(f"<div style='text-align: center; color: #cccccc; font-size: 18px; margin-bottom: 4px;'>{run_timestamp_str}</div>", unsafe_allow_html=True)
             
             # 3. Left-Aligned Summary Header (Font 12, White)
             st.markdown(f"<div style='text-align: left; color: #ffffff; font-size: 12px; margin-bottom: 2px;'><b>Ticker:</b> {st.session_state['ticker']} &nbsp;|&nbsp; <b>Spot:</b> {current_price:.2f} &nbsp;|&nbsp; <b>Type:</b> {st.session_state['side']}</div>", unsafe_allow_html=True)
@@ -169,8 +172,8 @@ try:
                 ),
                 yaxis=dict(
                     fixedrange=True,
-                    title=dict(text="Premium - Last US / Stock", font=dict(size=12, color="#e5e7eb")),
-                    tickfont=dict(size=12, color="#e5e7eb"),
+                    title=dict(text="Premium - Last US / Stock", font=dict(size=16, color="#e5e7eb")),  # +30% title font (12 -> 16)
+                    tickfont=dict(size=14, color="#e5e7eb"),                                           # +20% numbers font (12 -> 14.4 rounded)
                     showgrid=True,
                     gridcolor='#1e222d'
                 ),
