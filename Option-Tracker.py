@@ -139,8 +139,8 @@ try:
             # 1. Centered Title (Font 22, White)
             st.markdown("<div style='text-align: center; color: #ffffff; font-size: 22px; font-weight: bold; line-height: 1.2;'>Option Strike vs Premium</div>", unsafe_allow_html=True)
             
-            # 2. Centered Subtitle Timestamp (Font 10, 50% Grey)
-            st.markdown(f"<div style='text-align: center; color: #808080; font-size: 10px; margin-bottom: 4px;'>Snapshot: {run_timestamp_str} (Market Data: 15-min delayed)</div>", unsafe_allow_html=True)
+            # 2. Date When Run (Font 18, 30% Grey / #4d4d4d)
+            st.markdown(f"<div style='text-align: center; color: #4d4d4d; font-size: 18px; margin-bottom: 4px;'>{run_timestamp_str}</div>", unsafe_allow_html=True)
             
             # 3. Left-Aligned Summary Header (Font 12, White)
             st.markdown(f"<div style='text-align: left; color: #ffffff; font-size: 12px; margin-bottom: 2px;'><b>Ticker:</b> {st.session_state['ticker']} &nbsp;|&nbsp; <b>Spot:</b> {current_price:.2f} &nbsp;|&nbsp; <b>Type:</b> {st.session_state['side']}</div>", unsafe_allow_html=True)
