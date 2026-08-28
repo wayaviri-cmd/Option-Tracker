@@ -5,51 +5,58 @@ import plotly.graph_objects as go
 import streamlit as st
 import yfinance as yf
 
-# App Configuration
+# Mobile Viewport & Page Config
 st.set_page_config(page_title="Options Tracker", layout="centered", initial_sidebar_state="collapsed")
 
-# Aggressive space reduction & single-row mobile form
+# Mobile CSS: Compact input header, hidden Streamlit badges, and green run button
 st.markdown("""
 <style>
-    /* Remove padding to fill screen */
+    /* Maximize available screen height */
     .block-container {
-        padding: 0.1rem 0.2rem 0.1rem 0.2rem !important;
+        padding-top: 0.1rem !important;
+        padding-bottom: 2rem !important;
+        padding-left: 0.1rem !important;
+        padding-right: 0.1rem !important;
         max-width: 100% !important;
     }
-    #MainMenu, footer, header { visibility: hidden; }
+    
+    /* Completely remove Streamlit bottom badges/footers that block the X-axis */
+    #MainMenu, footer, header, [data-testid="stStatusWidget"], .viewerBadge_container, [data-testid="stDecoration"] {
+        display: none !important;
+        visibility: hidden !important;
+    }
 
-    /* Ultra-compact form container */
+    /* Ultra-slim input form container (reduced >50% vertical footprint) */
     [data-testid="stForm"] {
         border: 1px solid #1f2937 !important;
-        padding: 0.25rem 0.4rem !important;
+        padding: 0.2rem 0.3rem !important;
         border-radius: 6px !important;
         background-color: #0b0f19;
         margin-bottom: 0.1rem !important;
     }
 
-    /* Force all 4 form items into a single horizontal row on mobile */
-    [data-testid="stForm"] > div:first-child {
+    /* Force columns into a single non-stacking horizontal row */
+    div[data-testid="stForm"] > div:first-child {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
-        gap: 4px !important;
+        align-items: flex-end !important;
+        gap: 3px !important;
     }
-    [data-testid="column"] {
+    div[data-testid="column"] {
         width: auto !important;
         flex: 1 1 0 !important;
         min-width: 0 !important;
         padding: 0 !important;
     }
 
-    /* Hide standard top label space */
+    /* Compact labels & fields */
     .stTextInput > label, .stSelectbox > label, .stNumberInput > label {
         font-size: 0.65rem !important;
         line-height: 1 !important;
-        margin-bottom: 2px !important;
+        margin-bottom: 1px !important;
         color: #9ca3af !important;
     }
-
-    /* Slim input boxes */
     .stTextInput input, .stSelectbox div[data-baseweb="select"], .stNumberInput input {
         min-height: 26px !important;
         height: 26px !important;
@@ -58,7 +65,7 @@ st.markdown("""
         border-radius: 4px !important;
     }
 
-    /* Green submit button aligned in-row */
+    /* Small Green Run Button */
     div[data-testid="stFormSubmitButton"] {
         margin: 0 !important;
         padding: 0 !important;
@@ -83,17 +90,16 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Single Ultra-Compact Row for all inputs
+# Single Ultra-Slim Input Line
 with st.form("scanner_form"):
     c1, c2, c3, c4 = st.columns([1.3, 1.1, 1.0, 0.9])
     with c1:
-        ticker_input = st.text_input("Ticker", value="GOOG").strip().upper()
+        ticker_input = st.text_input("Ticker", value="INTC").strip().upper()
     with c2:
-        side_choice = st.selectbox("Side", ["Call", "Put"], index=0)
+        side_choice = st.selectbox("Side", ["Put", "Call"], index=0)
     with c3:
         pct_step = st.number_input("Step %", min_value=0.5, max_value=10.0, value=2.0, step=0.5) / 100.0
     with c4:
-        st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
         submitted = st.form_submit_button("Run")
 
 MAX_DAYS_AHEAD = 30
@@ -143,7 +149,7 @@ if submitted or "first_load" not in st.session_state:
             st.warning("No upcoming expiration dates.")
             st.stop()
 
-        # Compute strikes (+2% calls, -2% puts)
+        # Strike calculations (+2% calls, -2% puts)
         direction = 1 if side == "call" else -1
         strikes = sorted([
             round(current_price * (1 + direction * pct_step * i), 1)
@@ -196,46 +202,46 @@ if submitted or "first_load" not in st.session_state:
                 'text': f"<b>{ticker_input}</b> {side.upper()}s | Spot: <b>{current_price:.2f}</b>",
                 'x': 0.02,
                 'xanchor': 'left',
-                'font': {'size': 12}
+                'font': {'size': 14}  # +30% title size
             },
             xaxis=dict(
                 fixedrange=True,
-                tickfont=dict(size=9),
+                tickfont=dict(size=12, color="#e5e7eb"),  # +30% X tick font
                 showgrid=True,
                 gridcolor='#1e222d'
             ),
             yaxis=dict(
                 fixedrange=True,
-                title=dict(text="Last", font=dict(size=9)),
-                tickfont=dict(size=9),
+                title=dict(text="Last", font=dict(size=12, color="#e5e7eb")),  # +30% Y title
+                tickfont=dict(size=12, color="#e5e7eb"),                       # +30% Y tick font
                 showgrid=True,
                 gridcolor='#1e222d'
             ),
             template="plotly_dark",
             hovermode="x unified",
-            # Relocated Legend INSIDE the chart (Top-Right)
+            # Relocated Legend to TOP-LEFT inside the chart
             legend=dict(
-                x=0.98,
+                x=0.02,
                 y=0.98,
-                xanchor='right',
+                xanchor='left',
                 yanchor='top',
-                bgcolor='rgba(15, 23, 42, 0.65)',
+                bgcolor='rgba(15, 23, 42, 0.70)',
                 bordercolor='#374151',
                 borderwidth=1,
-                font=dict(size=9)
+                font=dict(size=12)  # +30% Legend font
             ),
-            margin=dict(l=2, r=2, t=26, b=18),
+            margin=dict(l=10, r=5, t=30, b=35),  # 35px bottom margin unblocks the X axis
             annotations=[
                 dict(
                     text=f"Run: {run_timestamp_str}",
                     showarrow=False,
                     xref="paper",
                     yref="paper",
-                    x=0.5,
+                    x=0.98,
                     y=-0.08,
-                    xanchor="center",
+                    xanchor="right",
                     yanchor="top",
-                    font=dict(size=7, color="#6b7280")
+                    font=dict(size=8, color="#6b7280")
                 )
             ]
         )
