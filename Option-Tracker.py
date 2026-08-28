@@ -8,19 +8,17 @@ import yfinance as yf
 # App Configuration
 st.set_page_config(page_title="Option Strike vs Premium", layout="centered", initial_sidebar_state="collapsed")
 
-# Mobile CSS: Plot on top, multi-row inputs below, zero page bloat
+# Mobile CSS: Header styling, Plot on top, multi-row inputs below
 st.markdown("""
 <style>
-    /* Remove default Streamlit top/bottom viewport padding */
     .block-container {
-        padding-top: 0.1rem !important;
+        padding-top: 0.2rem !important;
         padding-bottom: 0.5rem !important;
         padding-left: 0.4rem !important;
         padding-right: 0.4rem !important;
         max-width: 100% !important;
     }
     
-    /* Remove Streamlit headers, badges, and floating bottom widgets */
     #MainMenu, footer, header, [data-testid="stStatusWidget"], 
     .viewerBadge_container, [data-testid="stDecoration"],
     div[class*="viewerBadge"], iframe[title*="streamlit"] {
@@ -138,6 +136,15 @@ try:
                 continue
 
         if valid_dates:
+            # 1. Centered Title (Font 22, White)
+            st.markdown("<div style='text-align: center; color: #ffffff; font-size: 22px; font-weight: bold; line-height: 1.2;'>Option Strike vs Premium</div>", unsafe_allow_html=True)
+            
+            # 2. Centered Subtitle Timestamp (Font 10, 50% Grey)
+            st.markdown(f"<div style='text-align: center; color: #808080; font-size: 10px; margin-bottom: 4px;'>Snapshot: {run_timestamp_str} (Market Data: 15-min delayed)</div>", unsafe_allow_html=True)
+            
+            # 3. Left-Aligned Summary Header (Font 12, White)
+            st.markdown(f"<div style='text-align: left; color: #ffffff; font-size: 12px; margin-bottom: 2px;'><b>Ticker:</b> {st.session_state['ticker']} &nbsp;|&nbsp; <b>Spot:</b> {current_price:.2f} &nbsp;|&nbsp; <b>Type:</b> {st.session_state['side']}</div>", unsafe_allow_html=True)
+
             fig = go.Figure()
             date_strings = [d.strftime("%b %d") for d in valid_dates]
 
@@ -153,17 +160,7 @@ try:
                 ))
 
             fig.update_layout(
-                height=380,
-                # Centered Title (Font 14, White) with Subtitle (Font 9, 50% Grey)
-                title={
-                    'text': (
-                        f"<span style='color: #ffffff; font-size: 14px;'><b>Option Strike vs Premium</b></span><br>"
-                        f"<span style='color: #808080; font-size: 9px;'><b>{st.session_state['ticker']}</b> {side.upper()}s | Spot: <b>{current_price:.2f}</b> | "
-                        f"Snapshot: {run_timestamp_str} (15-min delayed)</span>"
-                    ),
-                    'x': 0.5,
-                    'xanchor': 'center'
-                },
+                height=360,
                 xaxis=dict(
                     fixedrange=True,
                     tickfont=dict(size=12, color="#e5e7eb"),
@@ -172,7 +169,7 @@ try:
                 ),
                 yaxis=dict(
                     fixedrange=True,
-                    title=dict(text="Premium Last (USD)", font=dict(size=12, color="#e5e7eb")),
+                    title=dict(text="Premium - Last US / Stock", font=dict(size=12, color="#e5e7eb")),
                     tickfont=dict(size=12, color="#e5e7eb"),
                     showgrid=True,
                     gridcolor='#1e222d'
@@ -189,7 +186,7 @@ try:
                     borderwidth=1,
                     font=dict(size=12)
                 ),
-                margin=dict(l=8, r=5, t=45, b=20)
+                margin=dict(l=8, r=5, t=10, b=20)
             )
 
             st.plotly_chart(
