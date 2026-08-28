@@ -5,71 +5,78 @@ import plotly.graph_objects as go
 import streamlit as st
 import yfinance as yf
 
-# Mobile Viewport & App Configuration
+# App Configuration
 st.set_page_config(page_title="Options Tracker", layout="centered", initial_sidebar_state="collapsed")
 
-# Mobile CSS: compact layout, 2x2 grid enforcement, small green button
+# Mobile Optimization & Direct CSS Targeting
 st.markdown("""
 <style>
-    /* Remove padding around main container */
+    /* Maximize room for the plot by removing page margins */
     .block-container {
-        padding-top: 0.5rem !important;
-        padding-bottom: 0.5rem !important;
-        padding-left: 0.4rem !important;
-        padding-right: 0.4rem !important;
+        padding-top: 0.2rem !important;
+        padding-bottom: 0.2rem !important;
+        padding-left: 0.2rem !important;
+        padding-right: 0.2rem !important;
         max-width: 100% !important;
     }
     #MainMenu, footer, header { visibility: hidden; }
 
-    /* Compact form container */
+    /* Ultra-compact form container */
     [data-testid="stForm"] {
         border: 1px solid #262730 !important;
-        padding: 0.5rem 0.6rem !important;
-        border-radius: 8px !important;
+        padding: 0.35rem 0.5rem !important;
+        border-radius: 6px !important;
         background-color: #0e1117;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.2rem !important;
     }
 
-    /* Force horizontal column display on mobile */
+    /* Force 2x2 layout on mobile screens */
     [data-testid="column"] {
-        width: calc(50% - 0.3rem) !important;
-        flex: 1 1 calc(50% - 0.3rem) !important;
-        min-width: calc(50% - 0.3rem) !important;
+        width: calc(50% - 0.25rem) !important;
+        flex: 1 1 calc(50% - 0.25rem) !important;
+        min-width: calc(50% - 0.25rem) !important;
     }
 
-    /* Tighten labels and input heights */
+    /* Compact inputs */
     .stTextInput > label, .stSelectbox > label, .stNumberInput > label {
-        font-size: 0.75rem !important;
+        font-size: 0.70rem !important;
         font-weight: 600 !important;
         margin-bottom: 0px !important;
     }
     .stTextInput input, .stSelectbox div[data-baseweb="select"], .stNumberInput input {
-        min-height: 34px !important;
-        height: 34px !important;
-        font-size: 0.85rem !important;
-        padding: 0 6px !important;
+        min-height: 30px !important;
+        height: 30px !important;
+        font-size: 0.80rem !important;
+        padding: 0 4px !important;
     }
 
-    /* Small Green Run Button */
-    div.stButton > button {
+    /* Explicit Green Form Submit Button */
+    div[data-testid="stFormSubmitButton"] {
+        display: flex;
+        align-items: flex-end;
+    }
+    div[data-testid="stFormSubmitButton"] > button,
+    div[data-testid="stFormSubmitButton"] > button:focus {
         background-color: #2e7d32 !important;
         color: #ffffff !important;
-        border: none !important;
-        font-size: 0.85rem !important;
+        border: 1px solid #2e7d32 !important;
+        font-size: 0.80rem !important;
         font-weight: bold !important;
-        padding: 0.3rem 0.6rem !important;
-        height: 34px !important;
+        padding: 0.2rem 0.5rem !important;
+        height: 30px !important;
         width: 100% !important;
-        border-radius: 6px !important;
-        margin-top: 1.15rem !important;
+        border-radius: 4px !important;
+        margin-top: 1.05rem !important;
     }
-    div.stButton > button:hover {
+    div[data-testid="stFormSubmitButton"] > button:hover {
         background-color: #1b5e20 !important;
+        border-color: #1b5e20 !important;
+        color: #ffffff !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# 2x2 Grid for Mobile
+# 2x2 Input Grid
 with st.form("compact_form"):
     r1_col1, r1_col2 = st.columns(2)
     with r1_col1:
@@ -83,7 +90,7 @@ with st.form("compact_form"):
     with r2_col2:
         submitted = st.form_submit_button("Run")
 
-MAX_DAYS_AHEAD = 30  # Default 30-day window
+MAX_DAYS_AHEAD = 30
 
 if submitted or "first_load" not in st.session_state:
     st.session_state["first_load"] = True
@@ -115,7 +122,6 @@ if submitted or "first_load" not in st.session_state:
         ]
         expirations.sort()
 
-        # Fallback if 30d window has no weekly/monthly options
         if not expirations:
             for s in all_options:
                 try:
@@ -131,14 +137,13 @@ if submitted or "first_load" not in st.session_state:
             st.warning("No upcoming expiration dates found.")
             st.stop()
 
-        # Generate strikes (+2% calls, -2% puts)
+        # Strike calculation (+2% calls, -2% puts)
         direction = 1 if side == "call" else -1
         strikes = sorted([
             round(current_price * (1 + direction * pct_step * i), 1)
             for i in range(4)
         ])
 
-        # Fetch option chain
         data = {s: [] for s in strikes}
         valid_dates = []
 
@@ -161,10 +166,9 @@ if submitted or "first_load" not in st.session_state:
                     continue
 
         if not valid_dates:
-            st.warning("No option chain contracts found.")
+            st.warning("No contracts available for the selected dates.")
             st.stop()
 
-        # Plotly chart configuration
         fig = go.Figure()
         date_strings = [d.strftime("%b %d") for d in valid_dates]
 
@@ -175,11 +179,12 @@ if submitted or "first_load" not in st.session_state:
                 y=vals,
                 customdata=p_pct_vals,
                 mode="lines+markers",
-                name=f"{strike}",  # Numbers only, 'Strike' removed
+                name=f"{strike}",
                 hovertemplate=f"<b>Strike:</b> {strike}<br><b>Last:</b> %{{y:.2f}}<br><b>P%:</b> %{{customdata:.2f}}%<extra></extra>"
             ))
 
         fig.update_layout(
+            height=460,  # Expanded vertical room for phone viewports
             title={
                 'text': f"<b>{ticker_input}</b> {side.upper()}s | Spot: <b>{current_price:.2f}</b>",
                 'x': 0.02,
@@ -187,13 +192,15 @@ if submitted or "first_load" not in st.session_state:
                 'font': {'size': 13}
             },
             xaxis=dict(
-                tickfont=dict(size=10),
+                fixedrange=True,  # Disable horizontal zoom/pinch
+                tickfont=dict(size=9),
                 showgrid=True,
                 gridcolor='#1e222d'
             ),
             yaxis=dict(
-                title=dict(text="Last Premium", font=dict(size=11)),
-                tickfont=dict(size=10),
+                fixedrange=True,  # Disable vertical zoom/pinch
+                title=dict(text="Last Premium", font=dict(size=10)),
+                tickfont=dict(size=9),
                 showgrid=True,
                 gridcolor='#1e222d'
             ),
@@ -202,12 +209,12 @@ if submitted or "first_load" not in st.session_state:
             legend=dict(
                 orientation="h",
                 yanchor="bottom",
-                y=-0.28,
+                y=-0.22,
                 xanchor="center",
                 x=0.5,
-                font=dict(size=11)
+                font=dict(size=10)
             ),
-            margin=dict(l=5, r=5, t=35, b=45),
+            margin=dict(l=2, r=2, t=30, b=30),  # Minimized chart borders
             annotations=[
                 dict(
                     text=f"Run: {run_timestamp_str}",
@@ -215,18 +222,24 @@ if submitted or "first_load" not in st.session_state:
                     xref="paper",
                     yref="paper",
                     x=0.5,
-                    y=-0.38,
+                    y=-0.30,
                     xanchor="center",
                     yanchor="top",
-                    font=dict(size=8, color="#718096")
+                    font=dict(size=7, color="#718096")  # Ultra-small footnote
                 )
             ]
         )
 
+        # Disable all zoom, scroll, and drag modes
         st.plotly_chart(
             fig,
             use_container_width=True,
-            config={'displayModeBar': False, 'responsive': True}
+            config={
+                'displayModeBar': False,
+                'responsive': True,
+                'scrollZoom': False,
+                'doubleClick': False
+            }
         )
 
     except Exception as e:
