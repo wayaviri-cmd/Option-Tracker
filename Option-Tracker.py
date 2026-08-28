@@ -8,15 +8,22 @@ import yfinance as yf
 # App Configuration
 st.set_page_config(page_title="Option Strike vs Premium", layout="centered", initial_sidebar_state="collapsed")
 
-# Mobile CSS: Header styling, Plot on top, multi-row inputs below
+# Mobile CSS: Lock entire app background to pure black (#000000 / #0e1117)
 st.markdown("""
 <style>
+    /* Force root and app background to dark on iOS Safari/Chrome */
+    html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"], .main {
+        background-color: #0b0f19 !important;
+        color: #ffffff !important;
+    }
+
     .block-container {
         padding-top: 0.2rem !important;
         padding-bottom: 0.5rem !important;
         padding-left: 0.4rem !important;
         padding-right: 0.4rem !important;
         max-width: 100% !important;
+        background-color: #0b0f19 !important;
     }
     
     #MainMenu, footer, header, [data-testid="stStatusWidget"], 
@@ -142,10 +149,10 @@ try:
             # 1. Centered Title (Font 22, White)
             st.markdown("<div style='text-align: center; color: #ffffff; font-size: 22px; font-weight: bold; line-height: 1.2;'>Option Strike vs Premium</div>", unsafe_allow_html=True)
             
-            # 2. Date When Run in NY Time (Reduced by 20%: 18px -> 14px, 80% White / #cccccc)
+            # 2. Date When Run in NY Time (Font 14, 80% White / #cccccc)
             st.markdown(f"<div style='text-align: center; color: #cccccc; font-size: 14px; margin-bottom: 4px;'>{run_timestamp_str}</div>", unsafe_allow_html=True)
             
-            # 3. Centered Summary Header (Increased by 20%: 12px -> 14px, White)
+            # 3. Centered Summary Header (Font 14, White)
             st.markdown(f"<div style='text-align: center; color: #ffffff; font-size: 14px; margin-bottom: 2px;'><b>Ticker:</b> {st.session_state['ticker']} &nbsp;|&nbsp; <b>Spot:</b> {current_price:.2f} &nbsp;|&nbsp; <b>Type:</b> {st.session_state['side']}</div>", unsafe_allow_html=True)
 
             fig = go.Figure()
@@ -164,6 +171,8 @@ try:
 
             fig.update_layout(
                 height=360,
+                paper_bgcolor='#0b0f19',
+                plot_bgcolor='#0b0f19',
                 xaxis=dict(
                     fixedrange=True,
                     tickfont=dict(size=12, color="#e5e7eb"),
