@@ -8,19 +8,19 @@ import yfinance as yf
 # App Configuration
 st.set_page_config(page_title="Options Tracker", layout="centered", initial_sidebar_state="collapsed")
 
-# Aggressive Mobile Single-Page CSS
+# Mobile CSS: Plot on top, multi-row inputs below, zero page bloat
 st.markdown("""
 <style>
-    /* Remove padding to fit entirely on one phone screen */
+    /* Remove default Streamlit top/bottom viewport padding */
     .block-container {
         padding-top: 0.1rem !important;
         padding-bottom: 0.5rem !important;
-        padding-left: 0.2rem !important;
-        padding-right: 0.2rem !important;
+        padding-left: 0.4rem !important;
+        padding-right: 0.4rem !important;
         max-width: 100% !important;
     }
     
-    /* Completely kill Streamlit headers, badges, and floating bottom widgets */
+    /* Remove Streamlit headers, badges, and floating bottom widgets */
     #MainMenu, footer, header, [data-testid="stStatusWidget"], 
     .viewerBadge_container, [data-testid="stDecoration"],
     div[class*="viewerBadge"], iframe[title*="streamlit"] {
@@ -29,55 +29,37 @@ st.markdown("""
         height: 0px !important;
     }
 
-    /* Force bottom inputs into a single compact horizontal line */
-    [data-testid="stHorizontalBlock"] {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        align-items: flex-end !important;
-        gap: 4px !important;
-        margin-top: 0.2rem !important;
-    }
-    [data-testid="column"] {
-        width: auto !important;
-        flex: 1 1 0 !important;
-        min-width: 0 !important;
-        padding: 0 !important;
-    }
-
-    /* Compact inputs */
+    /* Input styling */
     .stTextInput > label, .stSelectbox > label, .stNumberInput > label {
-        font-size: 0.65rem !important;
-        line-height: 1 !important;
-        margin-bottom: 1px !important;
+        font-size: 0.75rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 2px !important;
         color: #9ca3af !important;
     }
     .stTextInput input, .stSelectbox div[data-baseweb="select"], .stNumberInput input {
-        min-height: 30px !important;
-        height: 30px !important;
-        font-size: 0.80rem !important;
-        padding: 0 4px !important;
-        border-radius: 4px !important;
+        min-height: 36px !important;
+        height: 36px !important;
+        font-size: 0.90rem !important;
+        padding: 0 8px !important;
+        border-radius: 6px !important;
         background-color: #111827 !important;
         color: #ffffff !important;
         border: 1px solid #374151 !important;
     }
 
-    /* Small Green Run Button */
+    /* Full-Width Green Run Button */
     div.stButton {
-        margin-top: 0px !important;
+        margin-top: 0.4rem !important;
     }
     div.stButton > button {
         background-color: #15803d !important;
         color: #ffffff !important;
         border: 1px solid #166534 !important;
-        font-size: 0.80rem !important;
+        font-size: 0.95rem !important;
         font-weight: 700 !important;
-        height: 30px !important;
-        min-height: 30px !important;
+        height: 38px !important;
         width: 100% !important;
-        padding: 0 !important;
-        border-radius: 4px !important;
+        border-radius: 6px !important;
     }
     div.stButton > button:hover {
         background-color: #166534 !important;
@@ -85,7 +67,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Initialize Session State values for inputs
+# Initialize Session State
 if "ticker" not in st.session_state:
     st.session_state["ticker"] = "INTC"
 if "side" not in st.session_state:
@@ -97,7 +79,7 @@ MAX_DAYS_AHEAD = 30
 run_time_utc = dt.datetime.now(timezone.utc)
 run_timestamp_str = run_time_utc.strftime("%Y-%m-%d %H:%M:%S UTC")
 
-# ----------------- 1. DATA PROCESSING & PLOT AT TOP -----------------
+# ----------------- 1. CHART DISPLAY (TOP) -----------------
 try:
     ticker = yf.Ticker(st.session_state["ticker"])
     hist = ticker.history(period="5d")
@@ -171,7 +153,7 @@ try:
                 ))
 
             fig.update_layout(
-                height=450,  # Scaled to fit comfortably above the bottom inputs
+                height=380,  # Compact height to ensure the form fits below on phone screens
                 title={
                     'text': f"<b>{st.session_state['ticker']}</b> {side.upper()}s | Spot: <b>{current_price:.2f}</b>",
                     'x': 0.02,
@@ -193,7 +175,6 @@ try:
                 ),
                 template="plotly_dark",
                 hovermode="x unified",
-                # Inside Top-Left Legend
                 legend=dict(
                     x=0.02,
                     y=0.98,
@@ -204,7 +185,7 @@ try:
                     borderwidth=1,
                     font=dict(size=12)
                 ),
-                margin=dict(l=8, r=5, t=30, b=25),
+                margin=dict(l=8, r=5, t=30, b=20),
                 annotations=[
                     dict(
                         text=f"Run: {run_timestamp_str}",
@@ -234,18 +215,20 @@ try:
 except Exception as e:
     st.error(f"Error: {e}")
 
-# ----------------- 2. DATA ENTRY AT THE BOTTOM -----------------
-c1, c2, c3, c4 = st.columns([1.3, 1.1, 1.0, 0.9])
-with c1:
+# ----------------- 2. MULTI-ROW DATA ENTRY (BOTTOM) -----------------
+# Row 1: Ticker and Option Side
+r1_col1, r1_col2 = st.columns(2)
+with r1_col1:
     ticker_val = st.text_input("Ticker", value=st.session_state["ticker"]).strip().upper()
-with c2:
+with r1_col2:
     side_val = st.selectbox("Side", ["Put", "Call"], index=0 if st.session_state["side"] == "Put" else 1)
-with c3:
-    step_val = st.number_input("Step %", min_value=0.5, max_value=10.0, value=st.session_state["step_pct"], step=0.5)
-with c4:
-    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
-    if st.button("Run"):
-        st.session_state["ticker"] = ticker_val
-        st.session_state["side"] = side_val
-        st.session_state["step_pct"] = step_val
-        st.rerun()
+
+# Row 2: Step % (Full width or split)
+step_val = st.number_input("Step %", min_value=0.5, max_value=10.0, value=st.session_state["step_pct"], step=0.5)
+
+# Row 3: Run Button
+if st.button("Run"):
+    st.session_state["ticker"] = ticker_val
+    st.session_state["side"] = side_val
+    st.session_state["step_pct"] = step_val
+    st.rerun()
